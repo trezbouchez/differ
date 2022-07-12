@@ -51,9 +51,10 @@ impl RollingHash for PolynomialRollingHash {
             (u64::from(self.buffer[self.buffer_tap]) * self.max_pow) % self.modulus;
         // stay positive - rastafaray used to say (although what he meant probably was: stay unsigned)
         // to do so, we need to add self.modulus prior to subtracting the exiting value
-        // and also compute modulus of the (high) exiting value before subtracting it
-        // TODO: try running this in signed arithmetic to avoid these steps and profile
-        // to see which is faster
+        // and also compute % of the (high) exiting value before subtracting it
+        // this is because Rust % operator returns negative numbers for negative arguments
+        // (unlike some other programming languages)
+        // TODO: how about running this in signed arithmetic to avoid these steps?
         self.overall_hash = (self.overall_hash * self.base + byte_entering_window) % self.modulus;
         self.rolling_hash = ((self.rolling_hash + self.modulus - byte_exiting_window) * self.base
             + byte_entering_window)

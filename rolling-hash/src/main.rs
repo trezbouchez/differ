@@ -6,6 +6,8 @@ use slicer::slicer::*;
 mod reader;
 mod helper;
 mod slicer;
+mod lcs;
+mod lcs_nakatsu;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

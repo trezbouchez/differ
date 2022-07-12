@@ -1,6 +1,6 @@
 use super::rolling_hash::rolling_hash::*;
 
-struct Chunk {
+pub(crate) struct Chunk {
     upper_byte_index: usize, // not included in chunk
     simple_hash: u32,        // collission-prone hash
 }
@@ -65,9 +65,9 @@ where
                 self.hasher.reset();
                 self.current_chunk_size = 0;
             } else {
-                self.current_chunk_size = self.current_chunk_size + 1;
+                self.current_chunk_size += 1;
             }
-            self.byte_index = self.byte_index + 1;
+            self.byte_index += 1;
         }
     }
 }
@@ -78,7 +78,7 @@ fn test_slicer() {
     use crate::PolynomialRollingHash;
 
     let hasher = PolynomialRollingHash::new(16, Some(1000000007), Some(29791));
-    let boundary_mask: u32 = (1 << 6) - 1; // 6 least significant bits set
+    let boundary_mask: u32 = (1 << 6) - 1; // 6 least significant bits set, chunk size is 2^6 bytes on average
     let mut slicer = Slicer::new(hasher, boundary_mask, 32, 8192);
 
     read_file("./original.rtf", |bytes, progress| {
@@ -99,6 +99,4 @@ fn test_slicer() {
     for chunk in &slicer.chunks {
         println!("{}, {}", chunk.upper_byte_index, chunk.simple_hash);
     }
-
-    assert!(false, "ok");
 }
