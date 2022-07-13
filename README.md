@@ -10,3 +10,13 @@ Optimizations to consider:
 Other remarks:
 1. Some helper functions assume particular types (u8, u32). They could be made more general by using generics so that
 we'd have flexibility over choosing hash length etc.
+2. USed generics instead of dependency injection. Algorithms cannot be chosen at runtime. Can be easily changed.
+3. There are some hard-coded assumptions about hash types being used (rolling hash u32, proper hash ...). We could abstract them out using traits and generics if necessary.
+
+feeding sequences from disk
+
+TO BE DONE:
+slicer process - there's something not quite right in the process code, the min/max chunk sizes won't be observed
+1. slicer termination (flushinh when sequence ends so that the last chunk is detected)
+2. finish Hunt-Szymanski
+3. remove computing cheap hash from 

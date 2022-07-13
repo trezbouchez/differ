@@ -1,72 +1,74 @@
-use super::rolling_hash::rolling_hash::*;
+use super::rolling_hasher::rolling_hasher::*;
+use super::hasher::hasher::*;
 
-pub(crate) struct Chunk {
-    upper_byte_index: usize, // not included in chunk
-    simple_hash: u32,        // collission-prone hash
-}
-
-pub(crate) struct Slicer<H> {
+pub(crate) struct Slicer<RH: RollingHasher, H: Hasher>
+{
+    rolling_hasher: RH,
     hasher: H,
     boundary_mask: u32, // if masked hash bits are all zeros, it's a boundary
     min_chunk_size: usize,
     max_chunk_size: usize,
-    chunks: Vec<Chunk>,
+    boundaries: Vec<usize>,
+    pub hashes: Vec<String>,
     byte_index: usize,
-    current_chunk_size: usize,
 }
 
-impl<H> Slicer<H>
-where
-    H: RollingHash,
+impl<RH: RollingHasher, H: Hasher> Slicer<RH, H>
 {
     pub(crate) fn new(
+        rolling_hasher: RH,
         hasher: H,
         boundary_mask: u32,
         min_chunk_size: usize,
         max_chunk_size: usize,
-    ) -> Slicer<H> {
+    ) -> Slicer<RH, H> {
         assert!(
-            min_chunk_size >= hasher.get_window_size(),
+            min_chunk_size >= rolling_hasher.get_window_size(),
             "min_chunk_size must be greater than or equal the hasher sliding window size"
         );
         assert!(
             max_chunk_size >= min_chunk_size,
             "max_chunk_size cannot be lower min_chunk_size"
         );
+        // hasher.reset();
         Slicer {
+            rolling_hasher,
             hasher,
             boundary_mask,
-            chunks: vec![],
             min_chunk_size,
             max_chunk_size,
+            boundaries: vec![],
+            hashes: vec![],
             byte_index: 0,
-            current_chunk_size: 0,
         }
     }
 
-    pub(crate) fn reset(&mut self) {
-        self.hasher.reset();
-        self.chunks.clear();
-        self.byte_index = 0;
-        self.current_chunk_size = 0;
-    }
+    // pub(crate) fn reset(&mut self) {
+    //     self.rolling_hasher.reset();
+    //     // self.hasher.reset();
+    //     self.boundaries.clear();
+    //     self.byte_index = 0;
+    //     self.hasher.
+    //     self.chunk_buf.clear();
+    // }
 
     pub(crate) fn process(&mut self, buffer: &[u8]) {
         for byte in buffer {
-            self.hasher.push(*byte);
-            if (self.current_chunk_size >= self.min_chunk_size
-                && (self.hasher.get_rolling_hash() & self.boundary_mask) == 0)
-                || self.current_chunk_size == self.max_chunk_size
+            let rolling_hash = self.rolling_hasher.push(*byte);
+            let chunk_size = self.hasher.get_buffer_size();
+            if (chunk_size >= self.min_chunk_size
+                && (rolling_hash & self.boundary_mask) == 0)
+                || chunk_size == self.max_chunk_size
             {
-                self.chunks.push(Chunk {
-                    upper_byte_index: self.byte_index,
-                    simple_hash: self.hasher.get_overall_hash(),
-                });
-                self.hasher.reset();
-                self.current_chunk_size = 0;
-            } else {
-                self.current_chunk_size += 1;
-            }
+                // compute sha hash
+                let hash = self.hasher.finalize();
+                println!("{}", hash);
+                self.hashes.push(hash);
+                self.boundaries.push(self.byte_index);
+                self.rolling_hasher.reset();        // TODO: do we need this?
+            } 
+
+            self.hasher.push(*byte);
             self.byte_index += 1;
         }
     }
@@ -75,28 +77,47 @@ where
 #[test]
 fn test_slicer() {
     use crate::read_file;
-    use crate::PolynomialRollingHash;
+    use super::rolling_hasher::polynomial::*;
+    use super::hasher::sha256::*;
+    use super::hasher::sha1::*;
+    use super::hasher::md5::*;
 
-    let hasher = PolynomialRollingHash::new(16, Some(1000000007), Some(29791));
+    let min_chunk_size: usize = 32;
+    let max_chunk_size: usize = 8192;
+    let rolling_hash_window_size: u32 = 16;
+    let rolling_hash_modulus: u32 = 1000000007;
+    let rolling_hash_base: u32 = 29791;
     let boundary_mask: u32 = (1 << 6) - 1; // 6 least significant bits set, chunk size is 2^6 bytes on average
-    let mut slicer = Slicer::new(hasher, boundary_mask, 32, 8192);
 
-    read_file("./original.rtf", |bytes, progress| {
-        slicer.process(bytes);
-    });
-    assert_eq!(slicer.chunks.len(), 31);
     println!("ORIGINAL:");
-    for chunk in &slicer.chunks {
-        println!("{}, {}", chunk.upper_byte_index, chunk.simple_hash);
-    }
-
-    slicer.reset();
-    read_file("./modified.rtf", |bytes, progress| {
-        slicer.process(bytes);
+    let rolling_hasher = PolynomialRollingHasher::new(
+        rolling_hash_window_size,
+        Some(rolling_hash_modulus), 
+        Some(rolling_hash_base)
+    );
+    let hasher = Sha256Hasher::new(max_chunk_size);
+    let mut old_file_slicer = Slicer::new(rolling_hasher, hasher, boundary_mask, min_chunk_size, max_chunk_size);
+    read_file("./original.rtf", |bytes, progress| {
+        old_file_slicer.process(bytes);
     });
-    assert_eq!(slicer.chunks.len(), 31);
+    // for boundary in &old_file_slicer.boundaries {
+    //     println!("{}, ", boundary);
+    // }
+    assert_eq!(old_file_slicer.boundaries.len(), 31);
+
     println!("MODIFIED:");
-    for chunk in &slicer.chunks {
-        println!("{}, {}", chunk.upper_byte_index, chunk.simple_hash);
-    }
+    let rolling_hasher = PolynomialRollingHasher::new(
+        rolling_hash_window_size,
+        Some(rolling_hash_modulus), 
+        Some(rolling_hash_base)
+    );
+    let hasher = Sha256Hasher::new(max_chunk_size);
+    let mut new_file_slicer = Slicer::new(rolling_hasher, hasher, boundary_mask, min_chunk_size, max_chunk_size);
+    read_file("./modified.rtf", |bytes, progress| {
+        new_file_slicer.process(bytes);
+    });
+    // for boundary in &new_file_slicer.boundaries {
+    //     println!("{}, ", boundary);
+    // }
+    assert_eq!(new_file_slicer.boundaries.len(), 32);
 }

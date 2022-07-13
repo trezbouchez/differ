@@ -2,32 +2,33 @@
 Computes the Longest Common Subsequence using Nakatsu algorithm as outlined in:
 https://link.springer.com/article/10.1007/BF00264437
 
-It has the nice property of being efficient if strings are similar to each other
-due to its O(n(m-p)) complexity, where n,m are string lengths and p is the length
-of the LCS sequence.
+TIME:   O(n(m-p))
+SPACE:  O(nm)
 
-The original algorithm, capable of computing all subsequences of maximum length
-poses a problem for our case due to it's memory requirements which are quadratic
-of the (shorter) string length. As the file size can easily be hundreds of MB,
-assuming average chunk size of 8KB the length of the strings (of hashes) can easily
-become several thousands, leading to huge memory allocations (millions of words and more)
+where:
+n,m - the legths of the inputs
+p   - the length of the LCS
 
-To overcome this problem, we modify the original algorithm to use the linear space, where
-we only hold a vector of the previous computed diagonal, which is enough for running the
-recursion. The drawback is that we will only compute on LCS. One possible optimization of
-the delta-based file system is inspecting alternative LCSs and choosing the one that
-corresponds to the longest total chunks length, so that the amount of data sent over the
-network would be minimized (our chunks are of variable length). Having only one LCS makes
-this optimization impossible. Still, it seems to be a good compromise.
+It has the desired property of being efficient if inputs are similar which is
+the valid assumption for distributed file system (it's actually the motivation
+behind it). It approaches linear time if inputs are equal.
 
-Note that we use 0-based indices in contrast to the Nakatsu paper, which is 1-based.
+The drawback is that it is quadratic space so the allocated memory grows big
+for larger inputs.
 
-TODO: could we inspect chunk size at each diagonal step and choose the most appropriate?
+This implementation only returns one subsequence. If all are necessary, the L 
+triangular matrix need to be filled and all traceback paths must be followed.
+
+Possible optimizations:
+1. Run first two j's in separate loop to avoid branching
+2. Reduce memory requirements by two by smart addressing and only allocating the triangle
+3. Use 0-based indices (paper uses 1-based and we sticked to it for legibility)
+4. Use binary search when tracing back (horizontally). Not sure it'll help when inputs are similar.
 */
 
 pub(crate) fn lcs_nakatsu<T>(a_string: &[T], b_string: &[T]) -> Vec<T>
 where
-    T: Ord + Copy + std::fmt::Display,
+    T: Ord + Copy,
 {
     let a_len = a_string.len();
     let b_len = b_string.len();
@@ -56,84 +57,100 @@ where
     // tau(h:n) - trailing substring of tau starting at h-th character
     // L_i(k) - largest h such that sigma(i:m) and tau(h:n) have LCS of length k
 
-    // allocate vector for storing previous computed diagonal and zero its elements
-    // which is a way of saying that those values are undefined and allows the uniform
-    // handling
-    // these undefined Ls are for cases of L_i(k), where i+k > m (no such LCS exists)
-    let diagonal_buf_size: usize = m_len + 1;
-    let mut diagonal: Vec<usize> = vec![0; diagonal_buf_size]; // linear space (vector) holding previous computed diagonal
+    // TODO: run first two j's in separate loop to avoid branching
 
-    // TODO: run first two j in separate loop to avoid branching
+    // initialize the L matrix
+    let m_size = (m_len + 1) * (m_len + 1);
+    let mut l: Vec<usize> = Vec::with_capacity(m_size);
+    unsafe { l.set_len(m_size) }; // this is safe, we only need to initialize the diagonal
+    let mut i = m_len;
+    for _ in 0..m_len + 1 {
+        l[i] = 0;
+        i += m_len;
+    }
 
-    let mut lcs: Vec<T> = Vec::with_capacity(m_len);
-    let mut lcs_j: usize = 1; // for traversing solution in a down-then-left fashion
-    for diagonal_len in (0..diagonal_buf_size).rev() {
-        println!("i = diagonal_len = {}", diagonal_len);
+    let mut diagonal_len = m_len;
+    while diagonal_len > 0 {
         let mut solved: bool = true;
+        let mut prev_l = 0; // L_i+1(j-1)
         for j in 1..=diagonal_len {
-            // here we compute what the paper refers to as L_i(j) for decreasing i's and 
-            // increasing j's (diagonal)
-            // we store the computed diagonal values right-aligned in a diagonal buffer
-            // to avoid overwriting of the previous row values we may need according to
-            // Lemma 3 (step L_i(j) may need L_[i+1](j-1)
             let i = diagonal_len - j + 1;
-            let diagonal_buf_index = diagonal_buf_size - diagonal_len + i - 1;
-            print!("({},{})->{} ", j, i, diagonal_buf_index);
-            // diagonal[diagonal_buf_index] still holds L_[i+1](j) from previous step
-            let lower_bound = diagonal[diagonal_buf_index];
-            let upper_bound = if j >= 2 && diagonal[diagonal_buf_index+1] != 0 {     // paper calls it range
-                diagonal[diagonal_buf_index+1]      // TODO: this may be 0, what then? shouldn't we populate with n_len?
+            let index = (j - 1) * (m_len + 1) + i - 1;
+            let lower_bound = l[index + 1];
+            let upper_bound = if j >= 2 && prev_l != 0 {
+                // paper calls it range
+                prev_l
             } else {
                 n_len + 1
             };
-            print!("searching {} .. {} ", lower_bound, upper_bound);
-            // search for character
-            let mut l_ij: usize = lower_bound;
-            let searched_character = m_string[i-1];
-            for h in (lower_bound+1..upper_bound).rev() {
-                if n_string[h-1] == searched_character {
-                    print!("found at: {} ", h);
-                    l_ij = h;
-                    if j >= lcs_j {
-                        lcs.push(searched_character);
-                        lcs_j = j + 1;
-                    }
+            l[index] = lower_bound;
+            let searched_character = m_string[i - 1];
+            for h in (lower_bound + 1..upper_bound).rev() {
+                if n_string[h - 1] == searched_character {
+                    l[index] = h;
                     break;
                 }
             }
-            diagonal[diagonal_buf_index] = l_ij;
-            print!("L = {}\n", l_ij);
-            if l_ij == 0 {
+            prev_l = l[index];
+            if l[index] == 0 {
                 solved = false;
-                break;
+                break; // go to the next diagonal
             }
         }
+
         if solved {
-            return lcs;
+            break;
         }
+
+        diagonal_len -= 1;
+    }
+
+    for j in 0..m_len + 1 {
+        for i in 0..m_len + 1 {
+            print!("{},", l[j * (m_len + 1) + i]);
+        }
+        print!("\n");
+    }
+    print!("\n");
+
+    // trace back the longest subsequence
+    let mut lcs: Vec<T> = Vec::with_capacity(diagonal_len);
+    let mut index = (diagonal_len - 1) * (m_len + 1);
+    while index > 0 {
+        while l[index] == l[index + 1] {
+            index += 1;
+        }
+        lcs.push(n_string[l[index] - 1]);
+        index = if index > m_len { index - m_len } else { break };
     }
     lcs
 }
 
 #[test]
 fn test_lcs_nakatsu() {
-    /*
-         |0|1|2|3|4|5|6|7|
-         |b|c|d|a|b|a|b| |
-     0 |c| | | | | | | | |
-     1 |b| | | | | | | | |
-     2 |a| | | | | | | | |
-     3 |c| | | | | | | | |
-     4 |b| | | | | | | | |
-     5 |a| | | | | | | | |
-     6 |a| | | | | | | | |
-     7 |b| | | | | | | | |
-     8 |a| | | | | | | | |
-    */
+    // This is not the most reliable way of testing but it works for this particular implementation
+    // We could make the test fail even though the lcs_nakatsu routing were still correct
+    // by tracing back the subsequence using an alternative path.
+    // This is because there can be multiple solutions sequences to the LCS 
+    // A robust test would probably need to list them all and check if at least one matches
+    // what the lcs_nakatsu function returns. The problem is that we only ever compute one, so
+    // we'll stick to this test for now.
+
     let a_string = "bcdabab".as_bytes(); // ascii-only so as_bytes is ok
     let b_string = "cbacbaaba".as_bytes();
     let lcs = lcs_nakatsu(a_string, b_string);
+    let lcs_string = String::from_utf8(lcs).unwrap();
+    assert_eq!(lcs_string, "bcaba");
 
-    println!("LCS = {}", String::from_utf8(lcs).unwrap());
-    assert!(false);
+    let b_string = "equilibrium".as_bytes();
+    let a_string = "eiger".as_bytes(); // ascii-only so as_bytes is ok
+    let lcs = lcs_nakatsu(a_string, b_string);
+    let lcs_string = String::from_utf8(lcs).unwrap();
+    assert_eq!(lcs_string, "eir");
+
+    let a_string = "a blockchain is a growing list of records".as_bytes();
+    let b_string = "the blockchain - an ever-growing decentralized ledger".as_bytes();
+    let lcs = lcs_nakatsu(a_string, b_string);
+    let lcs_string = String::from_utf8(lcs).unwrap();
+    assert_eq!(lcs_string, " blockchain  a growing li er");
 }
