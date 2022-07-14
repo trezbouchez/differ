@@ -77,6 +77,7 @@ impl RollingHasher for PolynomialRollingHasher {
 impl PolynomialRollingHasher {
 
     // window_size must be a power of 2
+    #[allow(dead_code)]
     pub(crate) fn new(window_size: u32, modulus: Option<u32>, base: Option<u32>) -> Self {
         assert!(
             is_power_of_two(window_size),

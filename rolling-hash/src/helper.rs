@@ -1,5 +1,3 @@
-use std::mem;
-
 // fast way of checking if integer is a power of 2, note it won't work for 0!
 pub(crate) fn is_power_of_two(x: u32) -> bool {
     x & (x - 1) == 0

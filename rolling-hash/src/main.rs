@@ -1,16 +1,16 @@
 use std::env;
 use reader::*;
-use slicer::rolling_hasher::polynomial::*;
-use slicer::hasher::sha256::*;
-// use slicer::hasher::sha256::*;
-use slicer::slicer::*;
-use crate::lcs_nakatsu::*;
+use rolling_hasher::polynomial::*;
+use hasher::sha256::*;
+use lcs::nakatsu::*;
+use slicer::*;
 
 mod reader;
 mod helper;
 mod slicer;
+mod rolling_hasher;
+mod hasher;
 mod lcs;
-mod lcs_nakatsu;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -23,71 +23,76 @@ fn main() {
     let old_file_path = &args[1];
     let new_file_path = &args[2];
 
-
     /* 
 
-    STEP 1: Read both files and slice them into chunks
+    STEP 1: Analyze both files and slice them into fingerprinted chunks
     
     This step uses rolling hash algorithm to efficiently perform content-based slicing
     The chunk boundaries depend on the patterns detected in the content and are not prone
     to the shifted boundary issues.
+    The fingerprinting (assigning a collision-resistant digest to each chunk) is performed
+    by the hasher instance.
+
     */
 
+    let min_chunk_size: usize = 32;
+    let max_chunk_size: usize = 8192;
+    let rolling_hash_window_size: u32 = 16;
+    let rolling_hash_modulus: u32 = 1000000007;
+    let rolling_hash_base: u32 = 29791;
     let boundary_mask: u32 = (1 << 6) - 1; // 6 least significant bits set, chunk size is 2^6 bytes on average
 
-    // let old_rolling_hasher = PolynomialRollingHasher::new(16, Some(1000000007), Some(29791));
-    // let old_hasher = Sha256::new();
-    // let mut old_file_slicer = Slicer::new(old_rolling_hasher, old_hasher, boundary_mask, 32, 8192);
-    // read_file(old_file_path, |bytes, progress| {
-    //     old_file_slicer.process(bytes);
-    // });
+    // We could get away with sharing the instances of the rolling hasher and the hasher to analyze both files
+    // However, at some point we may want to analyze the files concurrently and since these hashers are stateful, 
+    // we'd run into problems. Instead, we prefer to create one instance per each slicer.
+    let old_file_rolling_hasher = PolynomialRollingHasher::new(
+        rolling_hash_window_size,
+        Some(rolling_hash_modulus), 
+        Some(rolling_hash_base)
+    );
+    let old_file_hasher = Sha256Hasher::new(max_chunk_size);
+    let mut old_file_slicer = Slicer::new(old_file_rolling_hasher, old_file_hasher, boundary_mask, min_chunk_size, max_chunk_size);
+    read_file(old_file_path, |bytes, _| {
+        old_file_slicer.process(bytes);
+    });
+    old_file_slicer.finalize();
 
-//    rolling_hasher.reset();
+    let new_file_rolling_hasher = PolynomialRollingHasher::new(
+        rolling_hash_window_size,
+        Some(rolling_hash_modulus), 
+        Some(rolling_hash_base)
+    );
+    let new_file_hasher = Sha256Hasher::new(max_chunk_size);
+    let mut new_file_slicer = Slicer::new(new_file_rolling_hasher, new_file_hasher, boundary_mask, min_chunk_size, max_chunk_size);
+    read_file(new_file_path, |bytes, _| {
+        new_file_slicer.process(bytes);
+    });
+    new_file_slicer.finalize();
 
-    // let new_rolling_hasher = PolynomialRollingHasher::new(16, Some(1000000007), Some(29791));
-    // let new_hasher = Sha256::new();
-    // let mut new_file_slicer = Slicer::new(new_rolling_hasher, new_hasher, boundary_mask, 32, 8192);
-    // read_file(new_file_path, |bytes, progress| {
-    //     old_file_slicer.process(bytes);
-    // });
 
-    // TODO: is the hasher reset here?
-    // let mut new_file_slicer = Slicer::new(hasher, boundary_mask, 32, 8192);
-    // read_file(new_file_path, |bytes, progress| {
-    //     new_file_slicer.process(bytes);
-    // });
-
-    
     /*
     
-    STEP 2: Compute the fingerprint for each chunk (hash)
+    STEP 2: Compute the Longest Common Subsequence of the stream of fingerprints for each
+    analyzed file. This will become the basis to generate the patch (delta) file.
 
-    The streams of hashes will then be compared to determine which chunks need to be
-    replaced, inserted and removed.
-    We need a proper collision-resistant hash here. This is because we won't perform 
-    any strict comparison of the chunks. When hashes match we assume the chunks contain
-    the same data and don't need to be updated.
-    One may argue that no has is collision-free and we may end up with wrong data after
-    applying a patch. While true, one has to note that the collision probability of long
+    One may argue that no hash is collision-free and we may end up with wrong data after
+    applying a patch. While true one has to note that the collision probability of long
     hashes is very low, even when compared to cosmic bit flips so maybe we shouldn't worry
-    and do the best we can
-    */
-    
-    // for chunk in &slicer.chunks {
-    //     println!("{}, {}", chunk.upper_byte_index, chunk.simple_hash);
-    // }
+    to much and accept being thrown into a not-ideal world (although close to perfection).
 
-    /* 
-    
-    STEP 3: Determine Longest Common Subsequence of the sequences of hashes
-
-    We use the LCS to determine matching chunks from both input sequences. Those
-    matching chunks don't need to be sent over the network because the client already
-    has them. We will only include the missing chunks (as well as deletions) in our delta
-    (patch) file
     */
 
-    // let lcs = lcs_nakatsu(&old_file_slicer.hashes, &new_file_slicer.hashes);
+    let _ = lcs_nakatsu(&old_file_slicer.hashes, &new_file_slicer.hashes);
+
+
+    /*
+    
+    STEP 3: Create patch (delta) file
+
+    */
+
+    // TODO: Implement it
+
 }
 
 fn help() {

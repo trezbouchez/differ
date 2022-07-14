@@ -7,7 +7,6 @@ gets cleared.
 */
 
 pub(crate) trait Hasher {
-    fn push(&mut self, byte: u8);
-    fn finalize(&mut self) -> String;                        // returns hash and resets
-    fn get_buffer_size(&self) -> usize;
+    fn push(&mut self, byte: u8);                           // push byte, don't compute hash yet
+    fn finalize(&mut self) -> String;                       // compute hash and reset
 }

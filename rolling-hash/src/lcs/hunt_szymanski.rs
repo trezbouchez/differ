@@ -18,22 +18,25 @@ Also, it is quadratic space so the allocated memory grows big for larger inputs.
 This implementation only returns one subsequence.
 */
 
-pub(crate) fn lcs_hunt_len<T>(a_string: &[T], b_string: &[T])
+#[allow(dead_code)]
+pub(crate) fn lcs_hunt_szymanski_len<T>(a_string: &[T], b_string: &[T]) -> usize
 where
     T: Ord,
 {
     // 1. Find coordinates of all pairs with matching characters
     let matching_characters_coords = matching_characters_coordinates(a_string, b_string);
 
+    matching_characters_coords.len()
     // 2. Determine head indices of the last row of dynamic programming matrix
-    let mut head_indices: Vec<usize> = vec![0];
-    let a_string_len = a_string.len();
-    let b_string_len = b_string.len();
-    let mut matching_characters_index = 0;
+    // let mut head_indices: Vec<usize> = vec![0];
+    // let a_string_len = a_string.len();
+    // let b_string_len = b_string.len();
+    // let matching_characters_index = 
 }
 
 // Computes the longest common subsequence
-pub(crate) fn lcs_hunt<T>(a_string: &[T], b_string: &[T])
+#[allow(dead_code)]
+pub(crate) fn lcs_hunt_szymanski<T>(_a_string: &[T], _b_string: &[T])
 where
     T: Ord,
 {
@@ -42,6 +45,7 @@ where
 // Returns the coordinates of the matching characters (cartesian product of their indices within the strings)
 // This method is faster than checking all cartesian product elements (brute force) and can be done in
 // O(r log n + m log(m)) instead of O(n*m)
+#[allow(dead_code)]
 fn matching_characters_coordinates<T>(a_string: &[T], b_string: &[T]) -> Vec<(usize,usize)>
 where
     T: Ord
@@ -92,9 +96,17 @@ where
 }
 
 #[test]
-fn test_longest_common_subsequence() {
+fn test_hunt_szymanski_matching_character_coordinates() {
     let a_string = "EQUILIBRIUM".as_bytes();    // ascii-only so as_bytes is ok
     let b_string = "EIGER".as_bytes();
-    let lcs = lcs_len(a_string, b_string);
-    assert_eq!(lcs, 3);
+    let coords = matching_characters_coordinates(a_string, b_string);
+    assert_eq!(coords, vec![(1,4),(1,1),(4,2),(6,2),(8,5),(9,2)]);
 }
+
+// #[test]
+// fn test_longest_common_subsequence() {
+//     let a_string = "EQUILIBRIUM".as_bytes();    // ascii-only so as_bytes is ok
+//     let b_string = "EIGER".as_bytes();
+//     let lcs = lcs_hunt_szymanski_len(a_string, b_string);
+//     assert_eq!(lcs, 3);
+// }

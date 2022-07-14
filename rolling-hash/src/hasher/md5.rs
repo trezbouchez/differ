@@ -24,14 +24,11 @@ impl Hasher for Md5Hasher {
 
         format!("{:X}", hash)
     }
-
-    fn get_buffer_size(&self) -> usize {
-        self.buffer.len()
-    }
 }
 
 impl Md5Hasher {
 
+    #[allow(dead_code)]
     pub(crate) fn new(max_chunk_size: usize) -> Md5Hasher {
         Md5Hasher {
             buffer: Vec::with_capacity(max_chunk_size),

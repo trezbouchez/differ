@@ -16,7 +16,12 @@ we'd have flexibility over choosing hash length etc.
 feeding sequences from disk
 
 TO BE DONE:
-slicer process - there's something not quite right in the process code, the min/max chunk sizes won't be observed
-1. slicer termination (flushinh when sequence ends so that the last chunk is detected)
-2. finish Hunt-Szymanski
-3. remove computing cheap hash from 
+DONE: slicer process - there's something not quite right in the process code, the min/max chunk sizes won't be observed
+DONE: slicer termination (flushinh when sequence ends so that the last chunk is detected)
+DONE: remove computing cheap hash from 
+DONE: compute LCS
+
+pretty-print progress
+finish Hunt-Szymanski
+wrap it all up in a single diff routine (process accepting buffer, finalize)
+review TODOs

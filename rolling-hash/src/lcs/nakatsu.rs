@@ -26,9 +26,10 @@ Possible optimizations:
 4. Use binary search when tracing back (horizontally). Not sure it'll help when inputs are similar.
 */
 
+#[allow(dead_code)]
 pub(crate) fn lcs_nakatsu<T>(a_string: &[T], b_string: &[T]) -> Vec<T>
 where
-    T: Ord + Copy,
+    T: Ord + Clone,
 {
     let a_len = a_string.len();
     let b_len = b_string.len();
@@ -84,9 +85,9 @@ where
                 n_len + 1
             };
             l[index] = lower_bound;
-            let searched_character = m_string[i - 1];
+            let searched_character = &m_string[i - 1];
             for h in (lower_bound + 1..upper_bound).rev() {
-                if n_string[h - 1] == searched_character {
+                if n_string[h - 1] == *searched_character {
                     l[index] = h;
                     break;
                 }
@@ -105,13 +106,13 @@ where
         diagonal_len -= 1;
     }
 
-    for j in 0..m_len + 1 {
-        for i in 0..m_len + 1 {
-            print!("{},", l[j * (m_len + 1) + i]);
-        }
-        print!("\n");
-    }
-    print!("\n");
+    // for j in 0..m_len + 1 {
+    //     for i in 0..m_len + 1 {
+    //         print!("{},", l[j * (m_len + 1) + i]);
+    //     }
+    //     print!("\n");
+    // }
+    // print!("\n");
 
     // trace back the longest subsequence
     let mut lcs: Vec<T> = Vec::with_capacity(diagonal_len);
@@ -120,7 +121,7 @@ where
         while l[index] == l[index + 1] {
             index += 1;
         }
-        lcs.push(n_string[l[index] - 1]);
+        lcs.push(n_string[l[index] - 1].clone());
         index = if index > m_len { index - m_len } else { break };
     }
     lcs
