@@ -12,6 +12,9 @@ Other remarks:
 we'd have flexibility over choosing hash length etc.
 2. USed generics instead of dependency injection. Algorithms cannot be chosen at runtime. Can be easily changed.
 3. There are some hard-coded assumptions about hash types being used (rolling hash u32, proper hash ...). We could abstract them out using traits and generics if necessary.
+Not sure if main meets the requirement saying that: "Hashing function gets the data as a parameter. Separate possible filesystem operations". The hashing function itself takes data. However, hash calculation needs to be buffered for big
+files so it doesn't make sense to pass the complete data (inputs).
+
 
 feeding sequences from disk
 
@@ -20,8 +23,13 @@ DONE: slicer process - there's something not quite right in the process code, th
 DONE: slicer termination (flushinh when sequence ends so that the last chunk is detected)
 DONE: remove computing cheap hash from 
 DONE: compute LCS
+DONE: unsafe in Nakatsu causes problems
+DONE: pretty-print progress
 
-pretty-print progress
+make lcs trait
 finish Hunt-Szymanski
 wrap it all up in a single diff routine (process accepting buffer, finalize)
 review TODOs
+test with moving_average
+other rolling hash algos (research)
+think about how to use bit-wise to optimize certain routines

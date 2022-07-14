@@ -1,4 +1,9 @@
-use std::env;
+use std::{
+    env,
+    io::{stdout, Write},
+    // thread::sleep,
+    // time::Duration,
+};
 use reader::*;
 use rolling_hasher::polynomial::*;
 use hasher::sha256::*;
@@ -22,6 +27,9 @@ fn main() {
 
     let old_file_path = &args[1];
     let new_file_path = &args[2];
+
+    let mut stdout = stdout();
+
 
     /* 
 
@@ -52,10 +60,13 @@ fn main() {
     );
     let old_file_hasher = Sha256Hasher::new(max_chunk_size);
     let mut old_file_slicer = Slicer::new(old_file_rolling_hasher, old_file_hasher, boundary_mask, min_chunk_size, max_chunk_size);
-    read_file(old_file_path, |bytes, _| {
+    read_file(old_file_path, |bytes, progress| {
+        print!("\rProcessing old file {}%", progress);
+        stdout.flush().unwrap();
         old_file_slicer.process(bytes);
     });
     old_file_slicer.finalize();
+    println!("\rProcessing old file - 100%");
 
     let new_file_rolling_hasher = PolynomialRollingHasher::new(
         rolling_hash_window_size,
@@ -64,10 +75,13 @@ fn main() {
     );
     let new_file_hasher = Sha256Hasher::new(max_chunk_size);
     let mut new_file_slicer = Slicer::new(new_file_rolling_hasher, new_file_hasher, boundary_mask, min_chunk_size, max_chunk_size);
-    read_file(new_file_path, |bytes, _| {
+    read_file(new_file_path, |bytes, progress| {
+        print!("\rProcessing new file {}%", progress);
+        stdout.flush().unwrap();
         new_file_slicer.process(bytes);
     });
     new_file_slicer.finalize();
+    println!("\rProcessing new file - 100%");
 
 
     /*
@@ -82,7 +96,11 @@ fn main() {
 
     */
 
+    print!("Computing Longest Common Subsequence...");
+
     let _ = lcs_nakatsu(&old_file_slicer.hashes, &new_file_slicer.hashes);
+    
+    println!("\rComputing Longest Common Subsequence - done");
 
 
     /*
@@ -91,7 +109,11 @@ fn main() {
 
     */
 
-    // TODO: Implement it
+    print!("Building delta file...");
+
+    println!("\rBuilding delta file - done");
+
+    // println!("Delta file saved!");
 
 }
 

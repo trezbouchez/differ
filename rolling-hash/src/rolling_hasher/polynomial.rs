@@ -100,7 +100,7 @@ impl PolynomialRollingHasher {
 
 #[test]
 #[should_panic(expected = r#"Sliding window size must be power of 2"#)]
-fn test_polynomial_sliding_window_hash_wrong_window_size() {
+fn test_polynomial_rolling_hash_wrong_window_size() {
     let _ = PolynomialRollingHasher::new(33, Some(1000000007), Some(29791));
 }
 
@@ -121,8 +121,7 @@ fn test_polynomial_rolling_hash() {
 
     let input = "equilibrium is a state of no motion";
     let mut hash = 0u32;
-    for (i, byte) in input.bytes().enumerate() {
-        println!("{}, {}", i, byte);
+    for byte in input.bytes() {
         hash = hasher.push(byte);
     }
     assert_eq!(hash, 958536060);

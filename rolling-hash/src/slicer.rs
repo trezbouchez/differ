@@ -84,7 +84,7 @@ impl<RH: RollingHasher, H: Hasher> Slicer<RH, H>
                 self.hashes.push(hash);
                 self.boundaries.push(self.boundaries.last().unwrap() + self.current_chunk_size);
                 self.current_chunk_size = 0;
-                self.rolling_hasher.reset();        // TODO: do we need this?
+                // self.rolling_hasher.reset();        // TODO: do we need this?
             } 
             self.hasher.push(*byte);                   
             self.current_chunk_size += 1;

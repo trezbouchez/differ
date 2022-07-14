@@ -16,7 +16,7 @@ behind it). It approaches linear time if inputs are equal.
 The drawback is that it is quadratic space so the allocated memory grows big
 for larger inputs.
 
-This implementation only returns one subsequence. If all are necessary, the L 
+This implementation only returns one subsequence. If all are necessary, the L
 triangular matrix need to be filled and all traceback paths must be followed.
 
 Possible optimizations:
@@ -25,6 +25,16 @@ Possible optimizations:
 3. Use 0-based indices (paper uses 1-based and we sticked to it for legibility)
 4. Use binary search when tracing back (horizontally). Not sure it'll help when inputs are similar.
 */
+
+use super::lcs::*;
+
+pub(crate) struct NakatsuLCS {}
+
+impl LCS for NakatsuLCS {
+    fn lcs<T: Ord + Clone>(a_string: &[T], b_string: &[T]) -> Vec<T> {
+        lcs_nakatsu(a_string, b_string)
+    }
+}
 
 #[allow(dead_code)]
 pub(crate) fn lcs_nakatsu<T>(a_string: &[T], b_string: &[T]) -> Vec<T>
@@ -72,14 +82,17 @@ where
 
     let mut diagonal_len = m_len;
     while diagonal_len > 0 {
-        let mut solved: bool = true;
         let mut prev_l = 0; // L_i+1(j-1)
+        let mut got_zero: bool = false;
         for j in 1..=diagonal_len {
             let i = diagonal_len - j + 1;
             let index = (j - 1) * (m_len + 1) + i - 1;
+            if got_zero {
+                l[index] = 0;
+                continue;
+            }
             let lower_bound = l[index + 1];
             let upper_bound = if j >= 2 && prev_l != 0 {
-                // paper calls it range
                 prev_l
             } else {
                 n_len + 1
@@ -94,13 +107,11 @@ where
             }
             prev_l = l[index];
             if l[index] == 0 {
-                solved = false;
-                break; // go to the next diagonal
+                got_zero = true;
             }
         }
-
-        if solved {
-            break;
+        if got_zero == false {
+            break; // solved!
         }
 
         diagonal_len -= 1;
@@ -132,7 +143,7 @@ fn test_lcs_nakatsu() {
     // This is not the most reliable way of testing but it works for this particular implementation
     // We could make the test fail even though the lcs_nakatsu routing were still correct
     // by tracing back the subsequence using an alternative path.
-    // This is because there can be multiple solutions sequences to the LCS 
+    // This is because there can be multiple solutions sequences to the LCS
     // A robust test would probably need to list them all and check if at least one matches
     // what the lcs_nakatsu function returns. The problem is that we only ever compute one, so
     // we'll stick to this test for now.

@@ -51,6 +51,6 @@
     pros (bandwidth reduction) outweigh the cons (more computations).
 */
 
-pub(crate) trait LCS<T> {
-    fn lcs(a_string: &[T], b_string: &[T]) -> Vec<T>;
+pub(crate) trait LCS {
+    fn lcs<T: Ord + Clone>(a_string: &[T], b_string: &[T]) -> Vec<T>;
 }
