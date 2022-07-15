@@ -14,32 +14,54 @@ is even worse than the basic dynamic programming algorithm.
 Doesn't seem to be the best choice for network file system where the motivation is
 that files usually only differ slightly.
 Also, it is quadratic space so the allocated memory grows big for larger inputs.
+This is the algorithm used by Linux diff.
 
 This implementation only returns one subsequence.
 */
 
+use crate::helper::*;
+
+// Computes the longest common subsequence
 #[allow(dead_code)]
-pub(crate) fn lcs_hunt_szymanski_len<T>(a_string: &[T], b_string: &[T]) -> usize
+pub(crate) fn lcs_hunt_szymanski<T>(a_string: &[T], b_string: &[T]) //-> usize
 where
     T: Ord,
 {
     // 1. Find coordinates of all pairs with matching characters
-    let matching_characters_coords = matching_characters_coordinates(a_string, b_string);
+    let r = matching_characters_coordinates(a_string, b_string);
+    let r_len = r.len();
 
-    matching_characters_coords.len()
     // 2. Determine head indices of the last row of dynamic programming matrix
-    // let mut head_indices: Vec<usize> = vec![0];
+    let mut head_indices: Vec<usize> = Vec::with_capacity(a_string.len());
+    head_indices.push(0);
+
+    let a_len = a_string.len();
+    let mut r_index: usize = 0;
+    for i in 1..=a_len {
+        print!("i = {} => ", i);
+        // here we drop the r's for already-processed rows and only perform binary
+        // search (lower_bound) within the remaining r's
+        let trailing_r = &r[r_index..r_len];
+        r_index += lower_bound_by(trailing_r, |lhs| lhs.0.cmp(&i)).unwrap_or(0);
+        while r_index != r_len && r[r_index].0 == i {
+            let j = r[r_index].1;
+            println!("({},{}), ", r[r_index].0, r[r_index].1);
+            if let Some(successor) = lower_bound(j, &head_indices) {
+                head_indices[successor] = j;
+            } else {
+                head_indices.push(j);
+            }
+            r_index += 1;
+        }
+        println!("head_indices: {:?}", &head_indices[..]);
+    }
+
+    //     for j in matching_char
+    // }
+
     // let a_string_len = a_string.len();
     // let b_string_len = b_string.len();
     // let matching_characters_index = 
-}
-
-// Computes the longest common subsequence
-#[allow(dead_code)]
-pub(crate) fn lcs_hunt_szymanski<T>(_a_string: &[T], _b_string: &[T])
-where
-    T: Ord,
-{
 }
 
 // Returns the coordinates of the matching characters (cartesian product of their indices within the strings)
@@ -96,17 +118,17 @@ where
 }
 
 #[test]
-fn test_hunt_szymanski_matching_character_coordinates() {
+fn test_lcs_hunt_szymanski_matching_character_coordinates() {
     let a_string = "EQUILIBRIUM".as_bytes();    // ascii-only so as_bytes is ok
     let b_string = "EIGER".as_bytes();
     let coords = matching_characters_coordinates(a_string, b_string);
     assert_eq!(coords, vec![(1,4),(1,1),(4,2),(6,2),(8,5),(9,2)]);
 }
 
-// #[test]
-// fn test_longest_common_subsequence() {
-//     let a_string = "EQUILIBRIUM".as_bytes();    // ascii-only so as_bytes is ok
-//     let b_string = "EIGER".as_bytes();
-//     let lcs = lcs_hunt_szymanski_len(a_string, b_string);
-//     assert_eq!(lcs, 3);
-// }
+#[test]
+fn test_lcs_hunt_szymanski() {
+    let a_string = "cosmituniegra".as_bytes();    // ascii-only so as_bytes is ok
+    let b_string = "icosmozeigra".as_bytes();
+    let lcs = lcs_hunt_szymanski(a_string, b_string);
+    assert!(false);
+}

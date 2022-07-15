@@ -50,7 +50,3 @@
     based on the chunk size (to minimize the amount of data sent over the network) but it's not sure whether the
     pros (bandwidth reduction) outweigh the cons (more computations).
 */
-
-pub(crate) trait LCS {
-    fn lcs<T: Ord + Clone>(a_string: &[T], b_string: &[T]) -> Vec<T>;
-}

@@ -26,16 +26,6 @@ Possible optimizations:
 4. Use binary search when tracing back (horizontally). Not sure it'll help when inputs are similar.
 */
 
-use super::lcs::*;
-
-pub(crate) struct NakatsuLCS {}
-
-impl LCS for NakatsuLCS {
-    fn lcs<T: Ord + Clone>(a_string: &[T], b_string: &[T]) -> Vec<T> {
-        lcs_nakatsu(a_string, b_string)
-    }
-}
-
 #[allow(dead_code)]
 pub(crate) fn lcs_nakatsu<T>(a_string: &[T], b_string: &[T]) -> Vec<T>
 where
@@ -126,6 +116,10 @@ where
     // print!("\n");
 
     // trace back the longest subsequence
+    // TODO: because rows are in order we could use binary search to speed things up.
+    // However, for moderate or small differences between compared strings this may 
+    // turn up being slower than plain one-by-one search (we usually don't need to inspect
+    // too many cells until the condition is met)
     let mut lcs: Vec<T> = Vec::with_capacity(diagonal_len);
     let mut index = (diagonal_len - 1) * (m_len + 1);
     while index > 0 {

@@ -6,6 +6,8 @@ Optimizations to consider:
 2. Choose the best rolling hash implementation and inline its 'push' to avoid function call overhead on a per-byte basis
 3. Can (and should) we avoid using Vec in longest_common_subsequence and run it all on stack?
 4. Find all LCS and choose the one depending on chunk sizes (longest in terms of bytes, so the least amount of data needs to be sent). In case of Nakatsu algorithm this greatly increases memory requirements.
+5. Binary searching rows when tracing back Nakatsu LCS
+
 
 Other remarks:
 1. Some helper functions assume particular types (u8, u32). They could be made more general by using generics so that
@@ -26,7 +28,6 @@ DONE: compute LCS
 DONE: unsafe in Nakatsu causes problems
 DONE: pretty-print progress
 
-make lcs trait
 finish Hunt-Szymanski
 wrap it all up in a single diff routine (process accepting buffer, finalize)
 review TODOs
