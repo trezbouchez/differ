@@ -24,8 +24,8 @@ const DEFAULT_BASE: u32 = 29791; // lower than modulus
 // we'd need to add the modulus prior to modulo operation to avoid
 // negative numbers which could result in some wasted cycles
 
-// TODO: we could probably let it overflow but it might adversely
-// affect collision rate (just a hypothesis, to be checked)
+// TODO: we could probably let it overflow (use wrapping arithmetics) 
+// but it might adversely affect collision rate (just a hypothesis, to be checked)
 
 pub(crate) struct PolynomialRollingHasher {
     modulus: u64,

@@ -1,3 +1,4 @@
+use std::ops::Range;
 use super::rolling_hasher::rolling_hasher::*;
 use super::hasher::hasher::*;
 
@@ -29,6 +30,11 @@ another stream needs to be analyzed.
 
 */
 
+pub(crate) struct Chunk {
+    pub hash: String,
+    pub end: usize,
+}
+
 pub(crate) struct Slicer<RH: RollingHasher, H: Hasher>
 {
     rolling_hasher: RH,
@@ -36,9 +42,9 @@ pub(crate) struct Slicer<RH: RollingHasher, H: Hasher>
     boundary_mask: u32, // if masked hash bits are all zeros, it's a boundary
     min_chunk_size: usize,
     max_chunk_size: usize,
-    current_chunk_size: usize,      // we could read it from the boundaries array, too
-    boundaries: Vec<usize>,         // chunk starting indices
-    pub hashes: Vec<String>,
+    current_chunk_size: usize,
+    current_chunk_start: usize,
+    pub chunks: Vec<Chunk>,
 }
 
 impl<RH: RollingHasher, H: Hasher> Slicer<RH, H>
@@ -58,7 +64,6 @@ impl<RH: RollingHasher, H: Hasher> Slicer<RH, H>
             max_chunk_size >= min_chunk_size,
             "max_chunk_size cannot be lower min_chunk_size"
         );
-        // hasher.reset();
         Slicer {
             rolling_hasher,
             hasher,
@@ -66,8 +71,8 @@ impl<RH: RollingHasher, H: Hasher> Slicer<RH, H>
             min_chunk_size,
             max_chunk_size,
             current_chunk_size: 0,
-            boundaries: vec![0],
-            hashes: vec![],
+            current_chunk_start: 0,
+            chunks: vec![],
         }
     }
 
@@ -78,13 +83,7 @@ impl<RH: RollingHasher, H: Hasher> Slicer<RH, H>
                 && (rolling_hash & self.boundary_mask) == 0)
                 || self.current_chunk_size == self.max_chunk_size
             {
-                // compute sha hash
-                let hash = self.hasher.finalize();
-                // println!("{}", hash);
-                self.hashes.push(hash);
-                self.boundaries.push(self.boundaries.last().unwrap() + self.current_chunk_size);
-                self.current_chunk_size = 0;
-                // self.rolling_hasher.reset();        // TODO: do we need this?
+                self.add_chunk();
             } 
             self.hasher.push(*byte);                   
             self.current_chunk_size += 1;
@@ -92,9 +91,16 @@ impl<RH: RollingHasher, H: Hasher> Slicer<RH, H>
     }
 
     pub(crate) fn finalize(&mut self) {
+        self.add_chunk();
+    }
+
+    fn add_chunk(&mut self) {
         let hash = self.hasher.finalize();
-        self.hashes.push(hash);
-        self.boundaries.push(self.boundaries.last().unwrap() + self.current_chunk_size);
+        let chunk_end = self.current_chunk_start + self.current_chunk_size;
+        let chunk = Chunk { hash, end: chunk_end };
+        self.chunks.push(chunk);
+        self.current_chunk_start = chunk_end;
+        self.current_chunk_size = 0;
     }
 }
 
@@ -148,5 +154,5 @@ fn test_slicer() {
         old_file_slicer.process(bytes);
     });
     old_file_slicer.finalize();
-    assert_eq!(old_file_slicer.boundaries.len(), 33);
+    assert_eq!(old_file_slicer.chunks.len(), 33);
 }

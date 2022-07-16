@@ -1,8 +1,6 @@
 use std::{
     env,
     io::{stdout, Write},
-    // thread::sleep,
-    // time::Duration,
 };
 use reader::*;
 use rolling_hasher::polynomial::*;
@@ -16,6 +14,8 @@ mod slicer;
 mod rolling_hasher;
 mod hasher;
 mod lcs;
+mod differ;
+mod delta;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -98,7 +98,7 @@ fn main() {
 
     print!("Computing Longest Common Subsequence...");
 
-    let _ = lcs_nakatsu(&old_file_slicer.hashes, &new_file_slicer.hashes);
+    // let _ = lcs_nakatsu(&old_file_slicer.hashes, &new_file_slicer.hashes);
     
     println!("\rComputing Longest Common Subsequence - done");
 

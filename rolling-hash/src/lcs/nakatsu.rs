@@ -1,5 +1,5 @@
 /*
-Computes the Longest Common Subsequence using Nakatsu algorithm as outlined in:
+Computes the Longest Common Subsequence using Nakatsu algorithm as proposed in:
 https://link.springer.com/article/10.1007/BF00264437
 
 TIME:   O(n(m-p))

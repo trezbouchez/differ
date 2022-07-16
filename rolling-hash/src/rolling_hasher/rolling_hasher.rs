@@ -1,5 +1,5 @@
 /*
-Rolling hasher interface, to be used with Slicer
+    Rolling hasher interface, to be used with Slicer
 */
 
 pub(crate) trait RollingHasher {

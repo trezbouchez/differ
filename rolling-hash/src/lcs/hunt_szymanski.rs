@@ -1,5 +1,5 @@
 /*
-Computes the Longest Common Subsequence using Hunt-Szymanski algorithm as outlined in:
+Computes the Longest Common Subsequence using Hunt-Szymanski algorithm as proposed in:
 https://imada.sdu.dk/~rolf/Edu/DM823/E16/HuntSzymanski.pdf
 TIME:   O((r+m) log n)
 SPACE:  O(nm)
@@ -16,6 +16,14 @@ Also, it is quadratic space so the allocated memory grows big for larger inputs.
 This is the algorithm used by Linux diff.
 
 This implementation only returns one subsequence.
+
+Possible optimizations:
+1. Improve the way new nodes are determined for each row. Now it's done by comparing rows of
+   head_indices. It should be done with an unordered set data structure (hash table?) where 
+   moved head_indices are put into (and updated) while the inner while loop is running. Then
+   when the loop completes, these indices can be used to insert new nodes.
+2. Searching for next active node while backtracing should be made better, at the moment it
+   simply checks the nodes one-by-one.
 */
 
 use crate::helper::*;
