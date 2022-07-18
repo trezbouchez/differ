@@ -27,6 +27,18 @@ The only external dependencies are md5, sha1, sha256 hash crates. Everything els
 
 # usage
 
+The project's output is the `differ` executable which can be used with:
+
+```
+differ <old_file> <new_file> <patched_file> <delta_file>
+
+where:
+old_file     - path to the original (old) file
+new_file     - path to the updated (new) file
+patched_file - patched file will be created at this path (the file recreated from old/new/delta)
+delta_file   - delta text file will be create at this location (contains description of all edits performed to build the patched_file)
+```
+
 The main top-level routines are contained in the 'differ.rs' file. The allow for processing in-memory data (buffers containing complete data) and for buffered processing (for large files which won't fit into memory).
 
 In-memory data processing example:
