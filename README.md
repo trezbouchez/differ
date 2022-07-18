@@ -24,10 +24,24 @@ new data to be inserted.
 
 The only external dependencies are md5, sha1, sha256 hash crates. Everything else was written from scratch based on the papers (cited in respective files). Because the purpose of this project is the recruitment process, all building blocks were written by the author, including those which could benefit from using easily obtainable data structures or algorithm implementations.
 
+# building and testing
 
-# usage
+To create the `differ` executable run:
+```
+cargo build
+```
 
-The project's output is the `differ` executable which can be used with:
+
+# testing
+
+Unit tests can be run with:
+```
+cargo test
+```
+
+# using
+
+The `differ` executable can be used with:
 
 ```
 differ <old_file> <new_file> <patched_file> <delta_file>
@@ -38,6 +52,12 @@ new_file     - path to the updated (new) file
 patched_file - patched file will be created at this path (the file recreated from old/new/delta)
 delta_file   - delta text file will be create at this location (contains description of all edits performed to build the patched_file)
 ```
+
+# example
+
+The `example` folder contains one simple example. Running the `example.sh` bash script will build the project and run it. It uses the assets included in the same folder.
+
+# code organization
 
 The main top-level routines are contained in the 'differ.rs' file. The allow for processing in-memory data (buffers containing complete data) and for buffered processing (for large files which won't fit into memory).
 
@@ -86,9 +106,11 @@ Please refer to the unit tests contained in differ.rs file for more details.
 
 - implementing Kumar LCS algorithm which is O(n(m-p)) time (like  Nakatsu) but also linear
   space (unlike Nakatsu which is quadratic, what may become a problem for large data:
+
   https://www.academia.edu/4127816/A_Linear_Space_Algorithm_for_the_LCS_Problem
 
 - using more efficient rolling hash algorithms, like the Gear used in FastCDC:
+  
   https://pdfs.semanticscholar.org/64b5/ce9ff6c7f5396cd1ec6bba8a9f5f27bc8dba.pdf
 
 - using more sophisticated slicing to minimize producing chunk of fixed size (max_chunk_size) 
