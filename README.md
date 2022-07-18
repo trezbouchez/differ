@@ -13,6 +13,7 @@ There are some alternative algorithmic blocks included in the code which are not
 - moving average rolling-hash
 - Hunt-Szymanski LCS (good when difference between files is substantial)
 - md5, sha1 digest
+
 It's not possible to switch them at runtime - they require (simple) code modifications.
 
 The created delta file is just a simple description. It does not contain any chunk data. To be used in a distributed
@@ -26,32 +27,56 @@ The only external dependencies are md5, sha1, sha256 hash crates. Everything els
 
 # usage
 
-The main top-level routines are contained in the 'differ.rs' file. The allow for processing in-memory data (buffers containing complete data) and for buffered processing (required for large files which won't fit into memory).
+The main top-level routines are contained in the 'differ.rs' file. The allow for processing in-memory data (buffers containing complete data) and for buffered processing (for large files which won't fit into memory).
 
-For processing complete in-memory data use:
+In-memory data processing example:
 ```
-       let delta = Differ::diff(...);
+let old_string = "What a a year in the blockchain sphere. It's also been quite a year for Equilibrium and I thought I'd recap everything that has happened in the company.";
+let new_string = "It's been a year in the blockchain sphere. It's also been quite a year for Equilibrium. I thought I'd recap everything that has happened in the company with a Year In Review post.";
+let window_size: u32 = 8;
+let min_chunk_size: usize = 8;
+let max_chunk_size: usize = 32;
+let boundary_mask: u32 = (1 << 4) - 1; // avg chunk size is 2^4 = 16
+let segments = Differ::diff(
+    old_string.as_bytes(),
+    new_string.as_bytes(),
+    Some(window_size),
+    Some(min_chunk_size),
+    Some(max_chunk_size),
+    Some(boundary_mask),
+);
 ```
 
-For buffered processing:
+Buffered processing example:
 ```
-       let mut differ = Differ::new(...);
-       differ.process_old(...);
-       differ.process_old(...);
-       differ.process_new(...);
-       differ.process_new(...);
-       differ.process_old(...);
-       differ.process_new(...);
-       let delta = differ.finalize();       // will consume differ instance
+let window_size: u32 = 64;
+let min_chunk_size: usize = 2048;
+let max_chunk_size: usize = 8192;
+let boundary_mask: u32 = (1 << 12) - 1; // avg chunk size is 2^12 = 4096
+let mut differ = Differ::new(
+    Some(window_size),
+    Some(min_chunk_size),
+    Some(max_chunk_size),
+    Some(boundary_mask),
+);       
+differ.process_old(...);
+differ.process_old(...);
+differ.process_new(...);
+differ.process_new(...);
+differ.process_old(...);
+differ.process_new(...);
+let delta = differ.finalize();       // will consume differ instance
 ```
+
+Please refer to the unit tests contained in differ.rs file for more details.
 
 # suggested further effort
 
 - implementing Kumar LCS algorithm which is O(n(m-p)) time (like  Nakatsu) but also linear
-  space (unlike Nakatsu which is quadratic, what may become a problem for large data)
+  space (unlike Nakatsu which is quadratic, what may become a problem for large data:
   https://www.academia.edu/4127816/A_Linear_Space_Algorithm_for_the_LCS_Problem
 
-- using more efficient rolling hash algorithms, like the Gear used in FastCDC
+- using more efficient rolling hash algorithms, like the Gear used in FastCDC:
   https://pdfs.semanticscholar.org/64b5/ce9ff6c7f5396cd1ec6bba8a9f5f27bc8dba.pdf
 
 - using more sophisticated slicing to minimize producing chunk of fixed size (max_chunk_size) 
