@@ -24,7 +24,7 @@ const DEFAULT_BASE: u32 = 29791; // lower than modulus
 // we'd need to add the modulus prior to modulo operation to avoid
 // negative numbers which could result in some wasted cycles
 
-// TODO: we could probably let it overflow (use wrapping arithmetics) 
+// TODO: we could probably let it overflow (use wrapping arithmetics)
 // but it might adversely affect collision rate (just a hypothesis, to be checked)
 
 pub(crate) struct PolynomialRollingHasher {
@@ -38,9 +38,8 @@ pub(crate) struct PolynomialRollingHasher {
 }
 
 impl RollingHasher for PolynomialRollingHasher {
-
     fn push(&mut self, byte: u8) -> u32 {
-        // here we exploit the modulo-arithmetic identities to stay within range and not 
+        // here we exploit the modulo-arithmetic identities to stay within range and not
         // cause overflow; this means some extra % operations so it may actually be more
         // efficient to run it in signed arithmetic
         // (a + b) % m = (a % m + b % m) % m
@@ -75,7 +74,6 @@ impl RollingHasher for PolynomialRollingHasher {
 }
 
 impl PolynomialRollingHasher {
-
     // window_size must be a power of 2
     #[allow(dead_code)]
     pub(crate) fn new(window_size: u32, modulus: Option<u32>, base: Option<u32>) -> Self {
@@ -98,49 +96,54 @@ impl PolynomialRollingHasher {
     }
 }
 
-#[test]
-#[should_panic(expected = r#"Sliding window size must be power of 2"#)]
-fn test_polynomial_rolling_hash_wrong_window_size() {
-    let _ = PolynomialRollingHasher::new(33, Some(1000000007), Some(29791));
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_polynomial_rolling_hash() {
-    // trying some basic sequence first
-    let mut hasher = PolynomialRollingHasher::new(4, Some(1000), Some(3));
-    let input: &[u8] = &[1, 2, 3, 4, 5, 6];
-    assert_eq!(hasher.push(input[0]), 1);
-    assert_eq!(hasher.push(input[1]), 5);
-    assert_eq!(hasher.push(input[2]), 18);
-    assert_eq!(hasher.push(input[3]), 58);
-    assert_eq!(hasher.push(input[4]), 98);
-    assert_eq!(hasher.push(input[5]), 138);
-
-    // and now some less naive examples
-    let mut hasher = PolynomialRollingHasher::new(16, Some(1000000007), Some(29791));
-
-    let input = "equilibrium is a state of no motion";
-    let mut hash = 0u32;
-    for byte in input.bytes() {
-        hash = hasher.push(byte);
+    #[test]
+    #[should_panic(expected = r#"Sliding window size must be power of 2"#)]
+    fn test_polynomial_rolling_hash_wrong_window_size() {
+        let _ = PolynomialRollingHasher::new(33, Some(1000000007), Some(29791));
     }
-    assert_eq!(hash, 958536060);
 
-    let input = "standing still is a state of no motion";
-    for byte in input.bytes() {
-        hash = hasher.push(byte);
-    }
-    assert_eq!(hash, 958536060);
+    #[test]
+    fn test_polynomial_rolling_hash() {
+        // trying some basic sequence first
+        let mut hasher = PolynomialRollingHasher::new(4, Some(1000), Some(3));
+        let input: &[u8] = &[1, 2, 3, 4, 5, 6];
+        assert_eq!(hasher.push(input[0]), 1);
+        assert_eq!(hasher.push(input[1]), 5);
+        assert_eq!(hasher.push(input[2]), 18);
+        assert_eq!(hasher.push(input[3]), 58);
+        assert_eq!(hasher.push(input[4]), 98);
+        assert_eq!(hasher.push(input[5]), 138);
 
-    let input = "eiger is an alpine peak";
-    for byte in input.bytes() {
-        hash = hasher.push(byte);
-    }
-    assert_eq!(hash, 682459160);
+        // and now some less naive examples
+        let mut hasher = PolynomialRollingHasher::new(16, Some(1000000007), Some(29791));
 
-    let input = "that remains in a state of no motion";
-    for byte in input.bytes() {
-        hash = hasher.push(byte);
+        let input = "equilibrium is a state of no motion";
+        let mut hash = 0u32;
+        for byte in input.bytes() {
+            hash = hasher.push(byte);
+        }
+        assert_eq!(hash, 958536060);
+
+        let input = "standing still is a state of no motion";
+        for byte in input.bytes() {
+            hash = hasher.push(byte);
+        }
+        assert_eq!(hash, 958536060);
+
+        let input = "eiger is an alpine peak";
+        for byte in input.bytes() {
+            hash = hasher.push(byte);
+        }
+        assert_eq!(hash, 682459160);
+
+        let input = "that remains in a state of no motion";
+        for byte in input.bytes() {
+            hash = hasher.push(byte);
+        }
+        assert_eq!(hash, 958536060);
     }
-    assert_eq!(hash, 958536060);
 }

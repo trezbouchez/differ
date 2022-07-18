@@ -19,7 +19,7 @@ This implementation only returns one subsequence.
 
 Possible optimizations:
 1. Improve the way new nodes are determined for each row. Now it's done by comparing rows of
-   head_indices. It should be done with an unordered set data structure (hash table?) where 
+   head_indices. It should be done with an unordered set data structure (hash table?) where
    moved head_indices are put into (and updated) while the inner while loop is running. Then
    when the loop completes, these indices can be used to insert new nodes.
 2. Searching for next active node while backtracing should be made better, at the moment it
@@ -72,10 +72,11 @@ where
 
         // determines nodes
         let block_count = head_indices.len();
-        let prev_node_block_count = prev_row_head_indices.len(); 
+        let prev_node_block_count = prev_row_head_indices.len();
         for block_index in 0..block_count {
-            if block_index == prev_node_block_count || 
-            head_indices[block_index] != prev_row_head_indices[block_index] {
+            if block_index == prev_node_block_count
+                || head_indices[block_index] != prev_row_head_indices[block_index]
+            {
                 nodes.push((i, head_indices[block_index], block_index));
             }
         }
@@ -91,17 +92,18 @@ where
         let mut node_index = active_node_index - 1;
         while node_index > 0 {
             let node = nodes[node_index];
-            if node.0 < active_node.0 && node.1 < active_node.1 && node.2 == next_active_block_index {
-                break
+            if node.0 < active_node.0 && node.1 < active_node.1 && node.2 == next_active_block_index
+            {
+                break;
             }
-            node_index -=1;
+            node_index -= 1;
         }
         active_node_index = node_index;
-    } 
+    }
 
     let mut lcs: Vec<T> = Vec::with_capacity(nodes.len());
     for char_index in char_indices.iter().rev() {
-        lcs.push(b_string[char_index-1].clone());
+        lcs.push(b_string[char_index - 1].clone());
     }
 
     lcs
@@ -162,31 +164,36 @@ where
     matching_character_coords
 }
 
-#[test]
-fn test_lcs_hunt_szymanski_matching_character_coordinates() {
-    let a_string = "EQUILIBRIUM".as_bytes(); // ascii-only so as_bytes is ok
-    let b_string = "EIGER".as_bytes();
-    let coords = matching_characters_coordinates(a_string, b_string);
-    assert_eq!(coords, vec![(1, 4), (1, 1), (4, 2), (6, 2), (8, 5), (9, 2)]);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_lcs_hunt_szymanski() {
-    let a_string = "bcdabab".as_bytes(); // ascii-only so as_bytes is ok
-    let b_string = "cbacbaaba".as_bytes();
-    let lcs = lcs_hunt_szymanski(a_string, b_string);
-    let lcs_string = String::from_utf8(lcs).unwrap();
-    assert_eq!(lcs_string, "cabab");
+    #[test]
+    fn test_lcs_hunt_szymanski_matching_character_coordinates() {
+        let a_string = "EQUILIBRIUM".as_bytes(); // ascii-only so as_bytes is ok
+        let b_string = "EIGER".as_bytes();
+        let coords = matching_characters_coordinates(a_string, b_string);
+        assert_eq!(coords, vec![(1, 4), (1, 1), (4, 2), (6, 2), (8, 5), (9, 2)]);
+    }
 
-    let a_string = "equilibrium".as_bytes();
-    let b_string = "eiger".as_bytes();
-    let lcs = lcs_hunt_szymanski(a_string, b_string);
-    let lcs_string = String::from_utf8(lcs).unwrap();
-    assert_eq!(lcs_string, "eir");
+    #[test]
+    fn test_lcs_hunt_szymanski() {
+        let a_string = "bcdabab".as_bytes(); // ascii-only so as_bytes is ok
+        let b_string = "cbacbaaba".as_bytes();
+        let lcs = lcs_hunt_szymanski(a_string, b_string);
+        let lcs_string = String::from_utf8(lcs).unwrap();
+        assert_eq!(lcs_string, "cabab");
 
-    let a_string = "a blockchain is a growing list of records".as_bytes();
-    let b_string = "the blockchain - an ever-growing decentralized ledger".as_bytes();
-    let lcs = lcs_hunt_szymanski(a_string, b_string);
-    let lcs_string = String::from_utf8(lcs).unwrap();
-    assert_eq!(lcs_string, " blockchain  a growing li ed");
+        let a_string = "equilibrium".as_bytes();
+        let b_string = "eiger".as_bytes();
+        let lcs = lcs_hunt_szymanski(a_string, b_string);
+        let lcs_string = String::from_utf8(lcs).unwrap();
+        assert_eq!(lcs_string, "eir");
+
+        let a_string = "a blockchain is a growing list of records".as_bytes();
+        let b_string = "the blockchain - an ever-growing decentralized ledger".as_bytes();
+        let lcs = lcs_hunt_szymanski(a_string, b_string);
+        let lcs_string = String::from_utf8(lcs).unwrap();
+        assert_eq!(lcs_string, " blockchain  a growing li ed");
+    }
 }

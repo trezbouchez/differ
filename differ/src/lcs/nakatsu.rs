@@ -117,7 +117,7 @@ where
 
     // trace back the longest subsequence
     // TODO: because rows are in order we could use binary search to speed things up.
-    // However, for moderate or small differences between compared strings this may 
+    // However, for moderate or small differences between compared strings this may
     // turn up being slower than plain one-by-one search (we usually don't need to inspect
     // too many cells until the condition is met)
     let mut lcs: Vec<T> = Vec::with_capacity(diagonal_len);
@@ -132,31 +132,36 @@ where
     lcs
 }
 
-#[test]
-fn test_lcs_nakatsu() {
-    // This is not the most reliable way of testing but it works for this particular implementation
-    // We could make the test fail even though the lcs_nakatsu routing were still correct
-    // by tracing back the subsequence using an alternative path.
-    // This is because there can be multiple solutions sequences to the LCS
-    // A robust test would probably need to list them all and check if at least one matches
-    // what the lcs_nakatsu function returns. The problem is that we only ever compute one, so
-    // we'll stick to this test for now.
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let a_string = "bcdabab".as_bytes(); // ascii-only so as_bytes is ok
-    let b_string = "cbacbaaba".as_bytes();
-    let lcs = lcs_nakatsu(a_string, b_string);
-    let lcs_string = String::from_utf8(lcs).unwrap();
-    assert_eq!(lcs_string, "bcaba");
+    #[test]
+    fn test_lcs_nakatsu() {
+        // This is not the most reliable way of testing but it works for this particular implementation
+        // We could make the test fail even though the lcs_nakatsu routing were still correct
+        // by tracing back the subsequence using an alternative path.
+        // This is because there can be multiple solutions sequences to the LCS
+        // A robust test would probably need to list them all and check if at least one matches
+        // what the lcs_nakatsu function returns. The problem is that we only ever compute one, so
+        // we'll stick to this test for now.
 
-    let b_string = "equilibrium".as_bytes();
-    let a_string = "eiger".as_bytes(); // ascii-only so as_bytes is ok
-    let lcs = lcs_nakatsu(a_string, b_string);
-    let lcs_string = String::from_utf8(lcs).unwrap();
-    assert_eq!(lcs_string, "eir");
+        let a_string = "bcdabab".as_bytes(); // ascii-only so as_bytes is ok
+        let b_string = "cbacbaaba".as_bytes();
+        let lcs = lcs_nakatsu(a_string, b_string);
+        let lcs_string = String::from_utf8(lcs).unwrap();
+        assert_eq!(lcs_string, "bcaba");
 
-    let a_string = "a blockchain is a growing list of records".as_bytes();
-    let b_string = "the blockchain - an ever-growing decentralized ledger".as_bytes();
-    let lcs = lcs_nakatsu(a_string, b_string);
-    let lcs_string = String::from_utf8(lcs).unwrap();
-    assert_eq!(lcs_string, " blockchain  a growing li er");
+        let b_string = "equilibrium".as_bytes();
+        let a_string = "eiger".as_bytes(); // ascii-only so as_bytes is ok
+        let lcs = lcs_nakatsu(a_string, b_string);
+        let lcs_string = String::from_utf8(lcs).unwrap();
+        assert_eq!(lcs_string, "eir");
+
+        let a_string = "a blockchain is a growing list of records".as_bytes();
+        let b_string = "the blockchain - an ever-growing decentralized ledger".as_bytes();
+        let lcs = lcs_nakatsu(a_string, b_string);
+        let lcs_string = String::from_utf8(lcs).unwrap();
+        assert_eq!(lcs_string, " blockchain  a growing li er");
+    }
 }
