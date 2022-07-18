@@ -73,8 +73,6 @@ pub struct Differ {
 }
 
 impl Differ {
-    /// diff
-    /// 
     /// Compares two versions of in-memory data (byte) buffers and returns delta
     /// 
     /// Arguments:
@@ -105,8 +103,6 @@ impl Differ {
         differ.finalize()
     }
 
-    /// new
-    /// 
     /// Creates a new Differ instance to be used with buffered file processing
     /// 
     /// Arguments:
@@ -138,8 +134,6 @@ impl Differ {
         }
     }
 
-    /// process_old, process_new
-    /// 
     /// Processes new buffer of the old and new file, respectively. Can be called in
     /// any order, e.g. old and new buffers can be interleaved and processed concurrently
     /// 
@@ -161,8 +155,6 @@ impl Differ {
         self.slicer_new.process(buffer);
     }
 
-    /// finalize
-    /// 
     /// Determines the delta description. To be called once both files have been read.
     /// 
     /// Returned:
@@ -226,7 +218,10 @@ mod tests {
     use crate::reader::read_file;
     use crate::patcher::patch;
     use sha2::{Sha256, Digest};
-    use std::{fs::{File/*,remove_file*/}, io::{copy}};
+    use std::{
+        fs::{File, OpenOptions, /*,remove_file*/}, 
+        io::{copy, Write}
+    };
 
     #[test]
     fn test_differ_data() {
@@ -293,8 +288,8 @@ mod tests {
         );
         
         // process old and new files
-        let old_file_path = "../monkey_before.tiff";
-        let new_file_path = "../monkey_after.tiff";
+        let old_file_path = "./example/monkey_before.tiff";
+        let new_file_path = "./example/monkey_after.tiff";
 
         read_file(old_file_path, |bytes, _| {
             differ.process_old(bytes);
@@ -306,8 +301,16 @@ mod tests {
         // compute delta
         let segments = differ.finalize();
 
+        // save segments file
+        let segments_text = format!("{:?}", segments);
+        _ = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open("./example/monkey_edits.txt")?
+            .write(segments_text.as_bytes())?;
+    
         // build patched file
-        let patched_file_path = "../monkey_patched.tiff";
+        let patched_file_path = "./example/monkey_patched.tiff";
         let (_old_bytes_used, _new_bytes_used) = patch(old_file_path, new_file_path, patched_file_path, segments)?;
 
         // println!("Bytes reused: {}", _old_bytes_used);

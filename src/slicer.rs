@@ -165,7 +165,7 @@ mod tests {
             min_chunk_size,
             max_chunk_size,
         );
-        read_file("../monkey_before.tiff", |bytes, _| {
+        read_file("./example/monkey_before.tiff", |bytes, _| {
             old_file_slicer.process(bytes);
         });
         old_file_slicer.finalize();
