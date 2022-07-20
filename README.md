@@ -17,12 +17,12 @@ There are some alternative algorithmic blocks included in the code which are not
 It's not possible to switch them at runtime - they require (simple) code modifications.
 
 The created delta file is just a simple description. It does not contain any chunk data. To be used in a distributed
-storage system the patch file would need to be built, containing ranges of the old file to be reused and chunks of
+storage system the patch file would need to be built containing ranges of the old file to be reused and chunks of
 new data to be inserted.
 
 # dependencies
 
-The only external dependencies are md5, sha1, sha256 hash crates. Everything else was written from scratch based on the papers (cited in respective files). Because the purpose of this project is the recruitment process, all building blocks were written by the author, including those which could benefit from using easily obtainable data structures or algorithm implementations.
+The only external dependencies are `md5`, `sha1` and `sha2` hash crates. Everything else was written from scratch based on the papers (cited in respective files). Because the purpose of this project is the recruitment process, all building blocks were written by the author, including those which could benefit from using easily obtainable data structures or algorithm implementations.
 
 # building and testing
 
@@ -63,7 +63,7 @@ The `example` folder contains one simple example. Running the `example.sh` bash 
 
 # code organization
 
-The main top-level routines are contained in the 'differ.rs' file. The allow for processing in-memory data (buffers containing complete data) and for buffered processing (for large files which won't fit into memory).
+The main top-level routines are contained in the 'differ.rs' file. They allow for processing in-memory data (buffers containing complete data) and for buffered processing (for large files which won't fit into memory).
 
 In-memory data processing example:
 ```
