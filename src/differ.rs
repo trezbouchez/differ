@@ -36,7 +36,7 @@ const DEFAULT_BOUNDARY_MASK: u32 = (1 << 12) - 1; // 12 least significant bits s
     Common Subseqence algorithm which is efficient when streams are similar (this seems to
     be a valid assumptions for the application which is a distributed storage system)
 
-    Alternative versions of rolling hash (moving average), digest (SHA1, MD5) and LCS (Hunt-Szymanski)
+    Alternative versions of rolling hash (moving sum), digest (SHA1, MD5) and LCS (Hunt-Szymanski)
     are available.
     They cannot be switched at runtime and require the code to be modified.
     The Slicer generic struct is taking RollingHasher and Hasher traits as compile-time arguments.

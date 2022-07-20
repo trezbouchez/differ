@@ -10,7 +10,7 @@ The default algorithm uses:
 - Nakatsu longest common subsequence algorithm (efficient when differences between files are small)
 
 There are some alternative algorithmic blocks included in the code which are not used by the built binary:
-- moving average rolling-hash
+- moving sum rolling-hash
 - Hunt-Szymanski LCS (good when difference between files is substantial)
 - md5, sha1 digest
 
@@ -29,6 +29,10 @@ The only external dependencies are md5, sha1, sha256 hash crates. Everything els
 To create the `differ` executable run:
 ```
 cargo build
+```
+or, for release optimized build:
+```
+cargo build --release
 ```
 
 

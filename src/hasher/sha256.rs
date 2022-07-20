@@ -7,10 +7,12 @@ pub(crate) struct Sha256Hasher {
 
 impl Hasher for Sha256Hasher {
 
+    #[inline(always)]
     fn push(&mut self, byte: u8) {
         self.buffer.push(byte);
     }
 
+    #[inline(always)]
     fn finalize(&mut self) -> String {                       // returns hash
         let hash = {
             let mut hasher = Sha256::new();

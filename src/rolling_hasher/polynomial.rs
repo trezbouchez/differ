@@ -38,6 +38,7 @@ pub(crate) struct PolynomialRollingHasher {
 }
 
 impl RollingHasher for PolynomialRollingHasher {
+    #[inline(always)]
     fn push(&mut self, byte: u8) -> u32 {
         // here we exploit the modulo-arithmetic identities to stay within range and not
         // cause overflow; this means some extra % operations so it may actually be more
@@ -60,12 +61,6 @@ impl RollingHasher for PolynomialRollingHasher {
         self.buffer_tap = (self.buffer_tap + 1) & self.buffer_mask;
 
         self.rolling_hash.try_into().unwrap()
-    }
-
-    fn reset(&mut self) {
-        // no need to reset self.hash or clear the buffer here
-        // we won't allow chunk sizes smaller than sliding window size
-        // so by the time this min size is reached the old values will get overwritten
     }
 
     fn get_window_size(&self) -> usize {

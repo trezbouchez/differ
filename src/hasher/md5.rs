@@ -13,10 +13,12 @@ pub(crate) struct Md5Hasher {
 
 impl Hasher for Md5Hasher {
 
+    #[inline(always)]
     fn push(&mut self, byte: u8) {
         self.buffer.push(byte);
     }
 
+    #[inline(always)]
     fn finalize(&mut self) -> String {                       // returns hash
         let hash = md5::compute(&self.buffer);
         
