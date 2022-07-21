@@ -8,5 +8,5 @@ gets cleared.
 
 pub(crate) trait Hasher {
     fn push(&mut self, byte: u8);                           // push byte, don't compute hash yet
-    fn finalize(&mut self) -> String;                       // compute hash and reset
+    fn finalize(&mut self) -> Vec<u8>;                     // compute hash and reset
 }

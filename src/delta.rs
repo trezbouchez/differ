@@ -17,7 +17,7 @@ impl Display for Segment {
     }
 }
 
-pub(crate) fn delta(chunks_old: &[Chunk], chunks_new: &[Chunk], lcs: &[String]) -> Vec<Segment> {
+pub(crate) fn delta(chunks_old: &[Chunk], chunks_new: &[Chunk], lcs: &[Vec<u8>]) -> Vec<Segment> {
     if lcs.is_empty() {
         return if let Some(last_new_chunk) = chunks_new.last() {
             vec![Segment::New(0..last_new_chunk.end)]
@@ -99,15 +99,15 @@ mod tests {
     #[test]
     fn test_delta_nothing_in_common() {
         let old_chunks: &[Chunk] = &[Chunk {
-            hash: "A".to_string(),
+            hash: "A".as_bytes().to_vec(),
             end: 4,
         }];
 
         let new_chunks: &[Chunk] = &[Chunk {
-            hash: "V".to_string(),
+            hash: "V".as_bytes().to_vec(),
             end: 4,
         }];
-        let lcs: &[String] = &[];
+        let lcs: &[Vec<u8>] = &[];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![Segment::New(0..4)]);
     }
@@ -115,13 +115,13 @@ mod tests {
     #[test]
     fn test_delta_empty_new() {
         let old_chunks: &[Chunk] = &[Chunk {
-            hash: "A".to_string(),
+            hash: "A".as_bytes().to_vec(),
             end: 4,
         }];
 
         let new_chunks: &[Chunk] = &[];
 
-        let lcs: &[String] = &[];
+        let lcs: &[Vec<u8>] = &[];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![]);
     }
@@ -132,25 +132,25 @@ mod tests {
 
         // single
         let new_chunks: &[Chunk] = &[Chunk {
-            hash: "V".to_string(),
+            hash: "V".as_bytes().to_vec(),
             end: 4,
         }];
-        let lcs: &[String] = &[];
+        let lcs: &[Vec<u8>] = &[];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![Segment::New(0..4)]);
 
         // many
         let new_chunks: &[Chunk] = &[
             Chunk {
-                hash: "V".to_string(),
+                hash: "V".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "W".to_string(),
+                hash: "W".as_bytes().to_vec(),
                 end: 8,
             },
         ];
-        let lcs: &[String] = &[];
+        let lcs: &[Vec<u8>] = &[];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![Segment::New(0..8)]);
     }
@@ -159,48 +159,48 @@ mod tests {
     fn test_delta_empty_both() {
         let old_chunks: &[Chunk] = &[];
         let new_chunks: &[Chunk] = &[];
-        let lcs: &[String] = &[];
+        let lcs: &[Vec<u8>] = &[];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![]);
     }
     #[test]
     fn test_delta_prepend() {
         let old_chunks: &[Chunk] = &[Chunk {
-            hash: "A".to_string(),
+            hash: "A".as_bytes().to_vec(),
             end: 4,
         }];
 
         // prepend one
         let new_chunks: &[Chunk] = &[
             Chunk {
-                hash: "V".to_string(),
+                hash: "V".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "A".to_string(),
+                hash: "A".as_bytes().to_vec(),
                 end: 8,
             },
         ];
-        let lcs: &[String] = &["A".to_string()];
+        let lcs: &[Vec<u8>] = &["A".as_bytes().to_vec()];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![Segment::New(0..4), Segment::Old(0..4),]);
 
         // prepend multiple
         let new_chunks: &[Chunk] = &[
             Chunk {
-                hash: "V".to_string(),
+                hash: "V".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "W".to_string(),
+                hash: "W".as_bytes().to_vec(),
                 end: 8,
             },
             Chunk {
-                hash: "A".to_string(),
+                hash: "A".as_bytes().to_vec(),
                 end: 12,
             },
         ];
-        let lcs: &[String] = &["A".to_string()];
+        let lcs: &[Vec<u8>] = &["A".as_bytes().to_vec()];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![Segment::New(0..8), Segment::Old(0..4),]);
     }
@@ -208,41 +208,41 @@ mod tests {
     #[test]
     fn test_delta_append() {
         let old_chunks: &[Chunk] = &[Chunk {
-            hash: "A".to_string(),
+            hash: "A".as_bytes().to_vec(),
             end: 4,
         }];
 
         // append one
         let new_chunks: &[Chunk] = &[
             Chunk {
-                hash: "A".to_string(),
+                hash: "A".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "V".to_string(),
+                hash: "V".as_bytes().to_vec(),
                 end: 8,
             },
         ];
-        let lcs: &[String] = &["A".to_string()];
+        let lcs: &[Vec<u8>] = &["A".as_bytes().to_vec()];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![Segment::Old(0..4), Segment::New(4..8),]);
 
         // append multiple
         let new_chunks: &[Chunk] = &[
             Chunk {
-                hash: "A".to_string(),
+                hash: "A".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "V".to_string(),
+                hash: "V".as_bytes().to_vec(),
                 end: 8,
             },
             Chunk {
-                hash: "X".to_string(),
+                hash: "X".as_bytes().to_vec(),
                 end: 12,
             },
         ];
-        let lcs: &[String] = &["A".to_string()];
+        let lcs: &[Vec<u8>] = &["A".as_bytes().to_vec()];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(segments, vec![Segment::Old(0..4), Segment::New(4..12)]);
     }
@@ -251,11 +251,11 @@ mod tests {
     fn test_delta_insert() {
         let old_chunks: &[Chunk] = &[
             Chunk {
-                hash: "A".to_string(),
+                hash: "A".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "B".to_string(),
+                hash: "B".as_bytes().to_vec(),
                 end: 8,
             },
         ];
@@ -263,19 +263,19 @@ mod tests {
         // insert one
         let new_chunks: &[Chunk] = &[
             Chunk {
-                hash: "A".to_string(),
+                hash: "A".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "V".to_string(),
+                hash: "V".as_bytes().to_vec(),
                 end: 8,
             },
             Chunk {
-                hash: "B".to_string(),
+                hash: "B".as_bytes().to_vec(),
                 end: 12,
             },
         ];
-        let lcs: &[String] = &["A".to_string(), "B".to_string()];
+        let lcs: &[Vec<u8>] = &["A".as_bytes().to_vec(), "B".as_bytes().to_vec()];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(
             segments,
@@ -285,27 +285,27 @@ mod tests {
         // insert multiple
         let new_chunks: &[Chunk] = &[
             Chunk {
-                hash: "A".to_string(),
+                hash: "A".as_bytes().to_vec(),
                 end: 4,
             },
             Chunk {
-                hash: "V".to_string(),
+                hash: "V".as_bytes().to_vec(),
                 end: 8,
             },
             Chunk {
-                hash: "W".to_string(),
+                hash: "W".as_bytes().to_vec(),
                 end: 12,
             },
             Chunk {
-                hash: "X".to_string(),
+                hash: "X".as_bytes().to_vec(),
                 end: 16,
             },
             Chunk {
-                hash: "B".to_string(),
+                hash: "B".as_bytes().to_vec(),
                 end: 20,
             },
         ];
-        let lcs: &[String] = &["A".to_string(), "B".to_string()];
+        let lcs: &[Vec<u8>] = &["A".as_bytes().to_vec(), "B".as_bytes().to_vec()];
         let segments = delta(old_chunks, new_chunks, lcs);
         assert_eq!(
             segments,

@@ -19,12 +19,12 @@ impl Hasher for Md5Hasher {
     }
 
     #[inline(always)]
-    fn finalize(&mut self) -> String {                       // returns hash
-        let hash = md5::compute(&self.buffer);
+    fn finalize(&mut self) -> Vec<u8> {                       // returns hash
+        let hash = md5::compute(&self.buffer).to_vec();
         
         self.buffer.clear();
 
-        format!("{:X}", hash)
+        hash
     }
 }
 

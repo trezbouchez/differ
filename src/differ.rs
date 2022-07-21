@@ -169,8 +169,8 @@ impl Differ {
 
         // TODO: iterating over chunk arrays (to get vectors of hashes) could be avoided if we
         // introduced a Hashed trait and pass it to LCS routines instead
-        let hashes_old: Vec<String> = chunks_old.iter().map(|chunk| chunk.hash.clone()).collect();
-        let hashes_new: Vec<String> = chunks_new.iter().map(|chunk| chunk.hash.clone()).collect();
+        let hashes_old: Vec<Vec<u8>> = chunks_old.iter().map(|chunk| chunk.hash.clone()).collect();
+        let hashes_new: Vec<Vec<u8>> = chunks_new.iter().map(|chunk| chunk.hash.clone()).collect();
 
         let lcs = lcs_nakatsu(&hashes_old[..], &hashes_new[..]);
         // let lcs = lcs_hunt_szymanski(&hashes_old[..], &hashes_new[..]);

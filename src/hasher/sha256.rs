@@ -13,15 +13,14 @@ impl Hasher for Sha256Hasher {
     }
 
     #[inline(always)]
-    fn finalize(&mut self) -> String {                       // returns hash
+    fn finalize(&mut self) -> Vec<u8> {                        // returns hash
         let hash = {
             let mut hasher = Sha256::new();
             hasher.update(&self.buffer);
-            hasher.finalize()
+            hasher.finalize().to_vec()
         };
         self.buffer.clear();
-
-        format!("{:X}", hash)
+        hash
     }
 }
 

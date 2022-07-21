@@ -30,7 +30,7 @@ another stream needs to be analyzed.
 */
 
 pub(crate) struct Chunk {
-    pub hash: String,
+    pub hash: Vec<u8>,
     pub end: usize,
 }
 

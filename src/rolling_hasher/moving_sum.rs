@@ -3,6 +3,10 @@
 
     Implements very simple moving sum (sliding window) rolling hash
     The hash is computed using modulo 2^32 by simply letting it overflow
+
+    Moving sum is not uniform across u32! Depending on the window size certain number
+    of most significant bytes will always be 0, so the slicer threshold needs to be 
+    adjusted accordingly to get the desired average chunk size
 */
 
 use super::rolling_hasher::*;
@@ -21,12 +25,8 @@ impl RollingHasher for MovingSumRollingHasher {
         let byte_entering_window = u32::from(byte);
         let byte_exiting_window = u32::from(self.buffer[self.buffer_tap]);
         self.rolling_hash = self
-            .rolling_hash
-            .overflowing_add(byte_entering_window)
-            .0
-            .overflowing_sub(byte_exiting_window)
-            .0;
-        self.buffer[self.buffer_tap] = byte;
+            .rolling_hash + byte_entering_window - byte_exiting_window;
+            self.buffer[self.buffer_tap] = byte;
         self.buffer_tap = (self.buffer_tap + 1) & self.buffer_mask;
 
         self.rolling_hash
@@ -45,6 +45,7 @@ impl MovingSumRollingHasher {
             is_power_of_two(window_size),
             "Sliding window size must be power of 2"
         );
+        // TODO: check if not too large
         MovingSumRollingHasher {
             rolling_hash: 0u32,
             buffer: vec![0; usize::try_from(window_size).unwrap()],
@@ -84,13 +85,5 @@ mod tests {
             hash = hasher.push(byte);
         }
         assert_eq!(hash, 1506);
-
-        // check it with overflow
-        let mut hasher = MovingSumRollingHasher::new(2);
-        hasher.buffer = vec![8, 1];
-        let input: &[u8] = &[1, 2, 8];
-        assert_eq!(hasher.push(input[0]), u32::MAX - 6); // 1-8 = -7
-        assert_eq!(hasher.push(input[1]), u32::MAX - 5); // -7-1+2= -6
-        assert_eq!(hasher.push(input[2]), 1); // -6-1+8= 1
     }
 }
