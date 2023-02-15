@@ -22,7 +22,7 @@ new data to be inserted.
 
 # dependencies
 
-The only external dependencies are `md5`, `sha1` and `sha2` hash crates. Everything else was written from scratch based on the papers (cited in respective files). Because the purpose of this project is the recruitment process, all building blocks were written by the author, including those which could benefit from using easily obtainable data structures or algorithm implementations.
+The only external dependencies are `md5`, `sha1` and `sha2` hash crates. Everything else was written from scratch based on the papers (cited in respective files).
 
 # building and testing
 
